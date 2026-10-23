@@ -84,6 +84,21 @@ services:
       retries: 5
     restart: unless-stopped
 
+  gateway:
+    build: ./gateway
+    container_name: repart-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      USUARIOS_URL: http://usuarios:8000
+      REPUESTOS_URL: http://repuestos:8001
+      VENTAS_URL: http://ventas:8002
+    depends_on:
+      - usuarios
+      - repuestos
+      - ventas
+    restart: unless-stopped
+
 volumes:
   usuarios_data:
   repuestos_data:
