@@ -1,5 +1,6 @@
 
 import os
+
 import psycopg
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -23,9 +24,8 @@ def inicio():
 
 @app.get("/usuarios")
 def listar_usuarios():
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 CREATE TABLE IF NOT EXISTS usuarios (
                     id SERIAL PRIMARY KEY,
                     nombre VARCHAR(100) NOT NULL,
@@ -33,12 +33,12 @@ def listar_usuarios():
                     rol VARCHAR(20) NOT NULL
                 )
             """)
-            cur.execute("""
+        cur.execute("""
                 SELECT id, nombre, correo, rol
                 FROM usuarios
                 ORDER BY id
             """)
-            filas = cur.fetchall()
+        filas = cur.fetchall()
 
     return [
         {
@@ -59,9 +59,8 @@ def crear_usuario(usuario: Usuario):
         )
 
     try:
-        with psycopg.connect(DATABASE_URL) as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
+        with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+            cur.execute("""
                     CREATE TABLE IF NOT EXISTS usuarios (
                         id SERIAL PRIMARY KEY,
                         nombre VARCHAR(100) NOT NULL,
@@ -69,12 +68,12 @@ def crear_usuario(usuario: Usuario):
                         rol VARCHAR(20) NOT NULL
                     )
                 """)
-                cur.execute("""
+            cur.execute("""
                     INSERT INTO usuarios (nombre, correo, rol)
                     VALUES (%s, %s, %s)
                     RETURNING id, nombre, correo, rol
                 """, (usuario.nombre, usuario.correo, usuario.rol))
-                fila = cur.fetchone()
+            fila = cur.fetchone()
 
         return {
             "id": fila[0],

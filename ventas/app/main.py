@@ -1,5 +1,6 @@
 
 import os
+
 import psycopg
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -19,9 +20,8 @@ class Venta(BaseModel):
     precio_unitario: float = Field(gt=0)
 
 def crear_tabla():
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 CREATE TABLE IF NOT EXISTS ventas (
                     id SERIAL PRIMARY KEY,
                     id_usuario INTEGER NOT NULL,
@@ -43,15 +43,14 @@ def inicio():
 
 @app.get("/ventas")
 def listar_ventas():
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 SELECT id, id_usuario, id_repuesto, cantidad,
                        precio_unitario, total
                 FROM ventas
                 ORDER BY id
             """)
-            filas = cur.fetchall()
+        filas = cur.fetchall()
 
     return [
         {
@@ -69,9 +68,8 @@ def listar_ventas():
 def crear_venta(venta: Venta):
     total = venta.cantidad * venta.precio_unitario
 
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 INSERT INTO ventas (
                     id_usuario, id_repuesto, cantidad,
                     precio_unitario, total
@@ -80,13 +78,13 @@ def crear_venta(venta: Venta):
                 RETURNING id, id_usuario, id_repuesto, cantidad,
                           precio_unitario, total
             """, (
-                venta.id_usuario,
-                venta.id_repuesto,
-                venta.cantidad,
-                venta.precio_unitario,
-                total
-            ))
-            fila = cur.fetchone()
+            venta.id_usuario,
+            venta.id_repuesto,
+            venta.cantidad,
+            venta.precio_unitario,
+            total
+        ))
+        fila = cur.fetchone()
 
     return {
         "id": fila[0],
@@ -99,15 +97,14 @@ def crear_venta(venta: Venta):
 
 @app.get("/ventas/{venta_id}")
 def consultar_venta(venta_id: int):
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 SELECT id, id_usuario, id_repuesto, cantidad,
                        precio_unitario, total
                 FROM ventas
                 WHERE id = %s
             """, (venta_id,))
-            fila = cur.fetchone()
+        fila = cur.fetchone()
 
     if fila is None:
         raise HTTPException(

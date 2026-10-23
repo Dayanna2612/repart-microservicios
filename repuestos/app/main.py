@@ -1,5 +1,6 @@
 
 import os
+
 import psycopg
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -19,9 +20,8 @@ class Repuesto(BaseModel):
     cantidad: int = Field(ge=0)
 
 def crear_tabla():
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 CREATE TABLE IF NOT EXISTS repuestos (
                     id SERIAL PRIMARY KEY,
                     nombre VARCHAR(100) NOT NULL,
@@ -41,14 +41,13 @@ def inicio():
 
 @app.get("/repuestos")
 def listar_repuestos():
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 SELECT id, nombre, marca, precio, cantidad
                 FROM repuestos
                 ORDER BY id
             """)
-            filas = cur.fetchall()
+        filas = cur.fetchall()
 
     return [
         {
@@ -63,19 +62,18 @@ def listar_repuestos():
 
 @app.post("/repuestos", status_code=201)
 def crear_repuesto(repuesto: Repuesto):
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 INSERT INTO repuestos (nombre, marca, precio, cantidad)
                 VALUES (%s, %s, %s, %s)
                 RETURNING id, nombre, marca, precio, cantidad
             """, (
-                repuesto.nombre,
-                repuesto.marca,
-                repuesto.precio,
-                repuesto.cantidad
-            ))
-            fila = cur.fetchone()
+            repuesto.nombre,
+            repuesto.marca,
+            repuesto.precio,
+            repuesto.cantidad
+        ))
+        fila = cur.fetchone()
 
     return {
         "id": fila[0],
@@ -87,14 +85,13 @@ def crear_repuesto(repuesto: Repuesto):
 
 @app.get("/repuestos/{repuesto_id}")
 def consultar_repuesto(repuesto_id: int):
-    with psycopg.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with psycopg.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("""
                 SELECT id, nombre, marca, precio, cantidad
                 FROM repuestos
                 WHERE id = %s
             """, (repuesto_id,))
-            fila = cur.fetchone()
+        fila = cur.fetchone()
 
     if fila is None:
         raise HTTPException(
